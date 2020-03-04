@@ -279,7 +279,7 @@
 									<tr key={product.id}>
 										<th scope="row">{product.id}</th>
 										<td>{product.title}</td>
-										<td>{categories.find(cat => cat.id === product.categoryId).name || ''}</td>
+										<td>{categories.length && categories.find(cat => cat.id === product.categoryId).name || ''}</td>
 										<td>${product.price}</td>
 										<td>{product.description}</td>
 										<td>{product.amount}</td>
