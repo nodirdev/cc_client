@@ -1,0 +1,385 @@
+﻿<div id="ReactApp"></div>
+
+<script type="text/jsx">
+
+    const { useState, useEffect } = React;
+
+    // Example POST method implementation:
+    async function postData(url = '', data = {}) {
+      // Default options are marked with *
+      const response = await fetch(url, {
+        method: 'POST', // *GET, POST, PUT, DELETE, etc.
+        //mode: 'no-cors', // no-cors, *cors, same-origin
+        //cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+        //credentials: 'same-origin', // include, *same-origin, omit
+        headers: {
+          'Content-Type': 'application/json'
+          // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        //redirect: 'follow', // manual, *follow, error
+        //referrerPolicy: 'no-referrer', // no-referrer, *client
+        body: JSON.stringify(data) // body data type must match "Content-Type" header
+      });
+      return await response.json(); // parses JSON response into native JavaScript objects
+    }
+
+    async function putData(url = '', data = {}) {
+      // Default options are marked with *
+      const response = await fetch(url, {
+        method: 'PUT', // *GET, POST, PUT, DELETE, etc.
+        mode: 'cors', // no-cors, *cors, same-origin
+        //cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+        //credentials: 'same-origin', // include, *same-origin, omit
+        headers: {
+          'Content-Type': 'application/json'
+          // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        //redirect: 'follow', // manual, *follow, error
+        //referrerPolicy: 'no-referrer', // no-referrer, *client
+        body: JSON.stringify(data) // body data type must match "Content-Type" header
+      });
+      return await response.json(); // parses JSON response into native JavaScript objects
+    }
+
+    async function deleteData(url = '', data = {}) {
+        console.log(url);
+      // Default options are marked with *
+      const response = await fetch(url, {
+        method: 'DELETE', // *GET, POST, PUT, DELETE, etc.
+        mode: 'cors', // no-cors, *cors, same-origin
+        //cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+        //credentials: 'same-origin', // include, *same-origin, omit
+        headers: {
+          'Content-Type': 'application/json'
+          // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        //redirect: 'follow', // manual, *follow, error
+        //referrerPolicy: 'no-referrer', // no-referrer, *client
+        //body: JSON.stringify(data) // body data type must match "Content-Type" header
+      });
+      return await response.json(); // parses JSON response into native JavaScript objects
+    }
+
+    const App = ()=>{
+
+        const domain = 'http://ec2-34-207-248-237.compute-1.amazonaws.com';
+
+
+			// state 👇👇👇
+			const [loading, setLoading]         = useState(false);
+			const [categories, setCategories]   = useState([]);
+			const [filters, setFilters]         = useState({Title: '', CategoryId: 0, PriceFrom: 0, PriceTo: 0, ASC: true});
+			const [products, setProducts]       = useState([]);
+			const [pageData, setPageData]       = useState({Page: 1, PageCount: 1});
+
+			// ComponentDidMounts dependent on each state change 👇👇👇
+			useEffect(()=>{
+				// mounted
+				if(categories.length === 0){
+					setLoading(true);
+					fetch(domain + '/api/filter').then(x=>x.json()).then(response=>{
+						setLoading(false);
+						setCategories(response);
+					});
+				}
+			}, [categories]);
+
+            const [refreshPage, setRefresh] = useState(0);
+
+			useEffect(()=>{
+				// mounted
+				setLoading(true);
+				postData(domain + '/api/filter', {...filters, ...pageData}).then(({page, pageCount, products}) => {
+					setLoading(false);
+					setProducts(products);
+					setPageData({Page: page, PageCount: pageCount});
+				});
+
+			}, [filters, pageData.Page, refreshPage]);
+
+
+			// state setter functions 👇👇👇
+			const priceFrom = event => setFilters(state=>({...state, PriceFrom: Number(event.target.value)}));
+			const priceTo   = event => setFilters(state=>({...state, PriceTo: Number(event.target.value)}));
+			const asc       = event => setFilters(state=>({...state, ASC: !state.ASC}));
+			const title     = event => setFilters(state=>({...state, Title: event.target.value}));
+			const category  = event => setFilters(state=>({...state, CategoryId: Number(event.target.value)}));
+			const getPage   = event => setPageData(state=>({...state, Page: Number(event.target.innerText)}));
+
+            
+
+			const PaginationLinks = ()=>{
+				let links = [];
+				for(let i = 0; i < pageData.PageCount; i++){
+					if(i+1 === pageData.Page){
+						links.push(<li key={i+1} className="active"><a href="#!">{i+1}</a></li>)
+					}else{
+						links.push(<li key={i+1}><a onClick={ ()=> getPage(event) } href="#!">{i+1}</a></li>)
+					}
+				}
+				return links;
+			}
+            
+            const [isNew, setNew] = useState(true);
+            const [modalOpen, setModal] = useState(false);
+
+            const [prod, setProd] = useState({
+                Id: 1,
+                CategoryId: 1,
+                Title: '',
+                Description: '',
+                Price: 0,
+                Amount: 0,
+            });
+
+            const FormEdit = (isNewww, id)=>{
+                setNew(isNewww);
+                setModal(true);
+                if(!isNewww){
+                    // update
+                    var {categoryId, title, description, price, amount} = products.find(p=>p.id === Number(id))
+                    setProd({
+                        Id: Number(id), 
+                        CategoryId: categoryId,
+                        Title: title,
+                        Description: description,
+                        Price: price,
+                        Amount: amount,
+                    });
+                }else{
+                    // create
+                    setProd({
+                        Id: 1,
+                        CategoryId: 1,
+                        Title: '',
+                        Description: '',
+                        Price: 0,
+                        Amount: 0,
+                    });
+                }
+            }
+
+            const SaveData = ()=>{
+                setLoading(true);
+                // send post/put request
+                if(isNew){
+                    postData(domain + '/api/products', {"CategoryId": prod.CategoryId, "Title": prod.Title, "Description": prod.Description, "Price": prod.Price, "Amount": prod.Amount}).then(({id, title}) => {
+					    if(id){
+                            setModal(false);
+                            setTimeout(()=>{
+                                setRefresh(x=>x+1);
+                            }, 1000);
+                            alert("Product - "+title+" has been created!");
+                        }else{
+                            alert("Error creating product - "+title+"!");
+                        }
+				    });
+                }else{
+                    putData(domain + '/api/products/'+prod.Id, {"Id": prod.Id, "CategoryId": prod.CategoryId, "Title": prod.Title, "Description": prod.Description, "Price": prod.Price, "Amount": prod.Amount}).then(() => {});
+                    setModal(false);
+                    setTimeout(()=>{
+                       setRefresh(x=>x+1);
+                    }, 1000);
+                }
+                setLoading(false);
+            }
+
+            const Delete = id => {
+                console.log(id);
+                if(confirm("Are you sure?") === true){
+                    // delete
+                    deleteData(domain + '/api/products/'+id).then(() => {
+                        setModal(false);
+				    });
+                    setTimeout(()=>{
+                        setRefresh(x=>x+1);
+                    }, 1000);
+                }
+            }
+
+
+			// JSX to be rendered 👇👇👇
+			return (
+				<div>
+                    <div className="ModalContiner" style={{display: modalOpen ? 'flex' : 'none'}}>
+                        <div className="ModalInner">
+                            <br />
+                            <input type="text" className="form-control" value={prod.Title} onChange={()=> setProd(x=>({...x, Title: event.target.value}))} placeholder="Title" />
+                            <br />
+                            <select className="form-control" onChange={()=> setProd(x=>({...x, CategoryId: Number(event.target.value)}))}>
+                                { categories.map(cat=>(<option value={cat.id} key={cat.id}>{cat.name}</option>)) }
+                            </select>
+                            <br />
+                            <input type="text" className="form-control" value={prod.Description} onChange={()=> setProd(x=>({...x, Description: event.target.value}))} placeholder="Description" />
+                            <br />
+                            <input type="number" className="form-control" value={prod.Price} onChange={()=> setProd(x=>({...x, Price: Number(event.target.value)}))} placeholder="Price" />
+                            <br />
+                            <input type="number" className="form-control" value={prod.Amount} onChange={()=> setProd(x=>({...x, Amount: Number(event.target.value)}))} placeholder="Remaining" />
+                            <br />
+                            <div>
+                                <button className="btn btn-sm btn-success" onClick={()=>SaveData()}>Save</button>
+                                <button className="btn btn-sm btn-default" onClick={()=>setModal(false)}>Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="container">
+					<div className="SearchFilterContainer row">
+						<div className="col-md-4 col-sm-12">
+							<center>
+								<select className="CatSelect" onChange={ ()=> category(event) }>
+									<option value="0">All categories</option>
+									{ categories.map(({id, name}, i)=>(
+									<option value={id} key={i}>{name}</option>)) }
+								</select>
+							</center>
+						</div>
+						<div className="col-md-8 col-sm-12">
+							<center>
+								<input type="text" className="SearchBar" placeholder="Filter"
+									   value={filters.Title}
+									   onChange={ ()=> title(event) }
+									   /><br />
+								<span>Price range</span>
+								<input type="number" id="priceFrom" placeholder="Price from"
+									   value={filters.PriceFrom}
+									   onClick={ ()=> event.target.select() }
+									   onChange={ ()=> priceFrom(event) }
+								/>
+								<input type="number" id="priceTo" placeholder="Price to"
+									   value={filters.PriceTo}
+									   onClick={ ()=> event.target.select() }
+									   onChange={ ()=> priceTo(event) }
+								/>
+								<input type="button" id="ascDesc"
+									   value={filters.ASC ? 'Ascending' : 'Descending'}
+									   onClick={ ()=> asc(event) }
+								/>
+							</center>
+						</div>
+					</div>
+					<hr />
+					<center>
+						<div style={{visibility: loading ? 'visible' : 'hidden'}}>Loading...</div>
+                        <button className="btn btn-success" onClick={()=>FormEdit(true)}>Create new Product</button>
+						<table className="table table-striped table-responsive">
+							<thead>
+							  <tr>
+								<th scope="col">Id</th>
+								<th scope="col">Name</th>
+								<th scope="col">Category</th>
+								<th scope="col">Price</th>
+								<th scope="col">Description</th>
+								<th scope="col">Remaining</th>
+								<th scope="col">Actions</th>
+							  </tr>
+							</thead>
+							<tbody>
+							  {
+								  products.map((product, i)=>(
+									<tr key={product.id}>
+										<th scope="row">{product.id}</th>
+										<td>{product.title}</td>
+										<td>{categories.find(cat => cat.id === product.categoryId).name || ''}</td>
+										<td>${product.price}</td>
+										<td>{product.description}</td>
+										<td>{product.amount}</td>
+										<td>
+											<button className="btn-default btn-sm btn" onClick={()=> FormEdit(false, product.id)} style={{width: '80px'}}>Edit</button>
+											<button className="btn-danger btn-sm btn" onClick={()=> Delete(product.id)} style={{width: '80px'}}>Delete</button>
+										</td>
+									</tr>
+								  ))
+							  }
+							</tbody>
+						</table>
+
+						<br /><br />
+
+						<nav>
+							<ul className="pagination">
+							   { PaginationLinks() }
+							</ul>
+						</nav>
+
+
+					</center>
+                    </div>
+				</div>
+			)
+    }
+
+    ReactDOM.render(<App />, document.getElementById('ReactApp'));
+
+</script>
+
+<style>
+    .SearchFilterContainer{
+        margin-top: 20px;
+    }
+    .CatSelect{
+        background: #000;
+        color: #fff;
+    }
+    .CatSelect, .SearchBar{
+        min-width: 80%;
+        font-size: 16px;
+        padding: 10px 20px;
+        margin-bottom: 10px;
+        border: 4px solid #000;
+        box-sizing: border-box;
+        border-radius: 4px;
+    }
+    
+    #priceFrom, #priceTo{
+        width: 100px;
+        padding: 5px 10px;
+    }
+    #ascDesc{
+        background: #fff;
+        color: #000;
+        border: 1px solid silver;
+        padding: 6px 10px;
+    }
+    .card{
+        box-shadow: 10px 10px 15px #999;
+        height: 400px;
+        width: 80%; 
+        margin: 20px 0;
+        padding: 25px 5px;
+        border-radius: 8px;
+    }
+    .card-title{
+        width: 100%;
+        overflow: hidden; 
+        height: 20px;
+    }
+    .card-img-top{
+        background-repeat: no-repeat;
+        background-position: center; 
+        background-size: contain;
+        width: 100%;
+        height: 250px;
+    }
+    .ModalContiner{
+        position: fixed;
+        display: flex;
+        width: calc(110% + 30px);
+        height: 100vh;
+        margin-top: -50px;
+        margin-left: -85px;
+        z-index:9999999999999999999999999999999999999999999999999999999999;
+        align-items: center;
+        justify-content: center;
+    }
+    .ModalInner{
+        max-width: 500px;
+        min-width: 300px;
+        min-height: 350px;
+        background: #fff;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        box-shadow: 0px 0px 50px 30px #999;
+    }
+</style>
