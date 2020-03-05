@@ -1,4 +1,4 @@
-$target = "C:\inetpub\wwwroot\Client\" 
+$target = "C:\inetpub\wwwroot\aspnet_client\" 
 
 function DeleteIfExistsAndCreateEmptyFolder($dir )
 {
@@ -31,6 +31,6 @@ function GetWebArtifactFolderPath($path)
     }
 }
 
-$path = GetWebArtifactFolderPath("C:\temp\WebApp\Client")
+$path = GetWebArtifactFolderPath("C:\temp\WebApp\aspnet_client")
 $path2 = $path + "\*"
 Copy-Item $path2 $target -recurse -force

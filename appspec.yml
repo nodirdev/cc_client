@@ -2,7 +2,7 @@ version: 0.0
 os: windows
 files:
   - source: \
-    destination: C:\temp\WebApp\Client
+    destination: C:\temp\WebApp\aspnet_client
   
 hooks:
   BeforeInstall:
