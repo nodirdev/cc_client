@@ -1,1 +1,1 @@
-New-WebApplication -Site "Default Web Site" -Name aspnet_client -PhysicalPath c:\inetpub\wwwroot\aspnet_client -Force
+New-WebApplication -Site "Default Web Site" -Name Client -PhysicalPath c:\inetpub\wwwroot\aspnet_client -Force
