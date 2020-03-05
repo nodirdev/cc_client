@@ -1,0 +1,1 @@
+New-WebApplication -Site "Default Web Site" -Name Client -PhysicalPath c:\inetpub\wwwroot\Client -Force
