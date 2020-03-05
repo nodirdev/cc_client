@@ -1,0 +1,15 @@
+version: 0.0
+os: windows
+files:
+  - source: \
+    destination: c:\temp\cc_client
+hooks:
+  BeforeInstall:
+    - location: powershell\deletewebsite.ps1
+      timeout: 180
+  AfterInstall:
+    - location: powershell\installwebsite.ps1
+      timeout: 180
+  ValidateService:
+    - location: powershell\validateinstall.ps1
+      timeout: 30
